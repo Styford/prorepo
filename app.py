@@ -1,88 +1,81 @@
 # -*- coding:utf-8 -*-
 
-import datetime
+
 import configparser
 import os
-
-from flask import Flask, jsonify, send_from_directory, request
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-
-
-DEBUG = True
-basedir = os.path.abspath(os.path.dirname(__file__))
-SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
-IPADDRESS = "http://10.99.0.103/"
-DATABASE_NAME = "postgres"
-DB_LOGIN = 'postgres'
-DB_PASSWORD = '123456'
-PATHS = {
-    'repo': '/var/lib/mercurial-server/repos/',
-}
-
-app = Flask(__name__, static_folder='static/dist')
-app.config.from_object(__name__)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'app.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://' +  DB_LOGIN + ':' + DB_PASSWORD + '@localhost/' + DATABASE_NAME
-db = SQLAlchemy(app)
-CORS(app)
+from models import app, db
+from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
+from models import People
+from flask_login import login_required, LoginManager
+from flask_login import current_user, login_user
 
 
-class Project(db.Model):
-  iId = db.Column(db.Integer, primary_key=True)
-  sPlan = db.Column(db.String(20), unique=True, nullable=False)
-  sTitle = db.Column(db.String(255), nullable=False)
-  bActive = db.Column(db.Boolean)
-  sPath = db.Column(db.String(255), nullable=False)
-  __table_args__ = {'extend_existing': True}
-  def __repr__(self):
-    return ("<Project %s>" % self.sTitle)
-
-class Certs(db.Model):
-  iId = db.Column(db.Integer, primary_key=True)
-  fkPeople = db.Column(db.Integer, db.ForeignKey("people.iId"))
-  dtAdded = db.Column(db.DateTime, default = datetime.datetime.utcnow)
-  dtExpired = db.Column(db.DateTime, default = datetime.datetime.utcnow)
-  sNrProtocol = db.Column(db.String(50), nullable = True)
-  sNrCert = db.Column(db.String(50), nullable = True)
-  __table_args__ = {'extend_existing': True}
-  
-class Files(db.Model):
-  iId = db.Column(db.Integer, primary_key = True)
-  fkPeople = db.Column(db.Integer, db.ForeignKey("people.iId"))
-  fkProject = db.Column(db.Integer, db.ForeignKey("project.iId"))
-  sDescription = db.Column(db.String(255), nullable = False)
-  dtAdded = db.Column(db.DateTime, default = datetime.datetime.utcnow)
-  dtChanged = db.Column(db.DateTime)
-  sFullPath = db.Column(db.String(255), nullable = False)
-  __table_args__ = {'extend_existing': True}
-  
-class People(db.Model):
-  iId = db.Column(db.Integer, primary_key = True)
-  sPostion = db.Column(db.String(255), nullable = False)
-  dtAdded = db.Column(db.DateTime, default = datetime.datetime.utcnow)
-  __table_args__ = {'extend_existing': True}
-  
-class Skill(db.Model):
-  iId = db.Column(db.Integer, primary_key = True)
-  fkPeople = db.Column(db.Integer, db.ForeignKey("people.iId"))
-  fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_name.iId"))
-  __table_args__ = {'extend_existing': True}
-  
-class SkillName(db.Model):
-  iId = db.Column(db.Integer, primary_key = True)
-  sName = db.Column(db.String(255), nullable = False)
-  __table_args__ = {'extend_existing': True}
-  
-class PeopleInProject(db.Model):
-  iId = db.Column(db.Integer, primary_key = True)
-  fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_name.iId"))
-  fkPeople = db.Column(db.Integer, db.ForeignKey("people.iId"))
-  fkProject = db.Column(db.Integer, db.ForeignKey("project.iId"))
-  __table_args__ = {'extend_existing': True}
 
 
+@app.route('/admin/')
+@login_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/login/', methods=['GET', 'POST'])
+def login():
+    
+    response_object = {'status': 'success'}
+    if current_user.is_authenticated:
+        response_object['message'] = 'Allready authorized'
+        return jsonify(response_object)
+    if request.method == 'POST':
+        post_data = request.get_json()
+        user = People.query.filter_by(sEmail=post_data.get('email')).first()
+        if user is None or not user.check_password(post_data.get('password')):
+            response_object['status'] = 'error!'
+            response_object['message'] = 'User not found or invalid password!'
+            return jsonify(response_object)
+        login_user(user, remember = True)
+        return jsonify(response_object)
+
+@app.route('/registration/', methods=['POST'])
+def registration():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        user = People.query.filter_by(sEmail=post_data.get('email')).first()
+        if user is None:
+            user = People(sEmail = post_data.get('email'))
+            user.set_password(post_data.get('password'))
+            db.session.add(user)
+            db.session.commit()
+            response_object['message'] = 'Регистрация прошла успешно'
+            return jsonify(response_object)
+        else:
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Пользователь с таким адресом уже существуюет'
+            return jsonify(response_object)
+
+@app.route('/update_myself/', methods=['POST'])
+@login_required
+def update_myself():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if current_user.is_authenticated:
+            if post_data.get('position'):
+                current_user.sPosition = post_data.get('position')
+            if post_data.get('firstName'):
+                current_user.sFirstName = post_data.get('firstName')
+            if post_data.get('middleName'):
+                current_user.sMiddleName = post_data.get('middleName')
+            if post_data.get('lastName'):
+                current_user.sLastName = post_data.get('lastName')
+            if post_data.get('group'):
+                current_user.fkGroup = post_data.get('group')
+            db.session.commit()    
+            response_object['message'] = 'Обноваление прошло успешно'
+            return jsonify(response_object)
+        else:
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Пройдите авторизацию'
+            return jsonify(response_object)
 
 @app.route('/')
 def index():
@@ -96,31 +89,31 @@ def static_dist(path):
 
 @app.route("/api/projects/create", methods=['POST'])
 def create_project():
-  response_object = {'status': 'success'}
-  if request.method == 'POST':
-    post_data = request.get_json()
-    project_path = PATHS['repo'] + post_data.get('plan')
-    newprj = Project(
-      plan = post_data.get('plan'),
-      title = post_data.get('description'),
-      author = post_data.get('users'),
-      path = project_path,
-      active = True
-    )
-    db.session.add(newprj)
-    db.session.commit()    
-    os.system("mkdir " + project_path)
-    if post_data.get('folders'):
-        for folder in post_data.get('folders'):
-            print (folder)
-            os.system("mkdir " + project_path + "/" + folder)
-            os.system('echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + "/" + folder + "/README.TXT")
-    os.system("hg init " + project_path)
-    os.system('echo "[ui]" >>  ' + project_path + "/.hg/hgrc")
-    os.system('echo "username = ' + post_data.get('users') +  '" >> ' + project_path + '/.hg/hgrc')
-    os.system('hg commit -u "syzsi" -m "init commit" ' + project_path)
-    response_object['message'] = 'Repo created!'
-  return jsonify(response_object)
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        project_path = PATHS['repo'] + post_data.get('plan')
+        newprj = Project(
+            plan = post_data.get('plan'),
+            title = post_data.get('description'),
+            author = post_data.get('users'),
+            path = project_path,
+            active = True
+        )
+        db.session.add(newprj)
+        db.session.commit()    
+        os.system("mkdir " + project_path)
+        if post_data.get('folders'):
+            for folder in post_data.get('folders'):
+                print (folder)
+                os.system("mkdir " + project_path + "/" + folder)
+                os.system('echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + "/" + folder + "/README.TXT")
+        os.system("hg init " + project_path)
+        os.system('echo "[ui]" >>  ' + project_path + "/.hg/hgrc")
+        os.system('echo "username = ' + post_data.get('users') +  '" >> ' + project_path + '/.hg/hgrc')
+        os.system('hg commit -u "syzsi" -m "init commit" ' + project_path)
+        response_object['message'] = 'Repo created!'
+        return jsonify(response_object)
 
 @app.route("/api/projects/get", methods=['GET'])
 def get_projects():
