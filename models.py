@@ -31,7 +31,7 @@ def load_user(id):
 class Project(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   sPlan = db.Column(db.String(20), unique=True, nullable=False)
-  sTitle = db.Column(db.String(255), nullable=False)
+  sDescription = db.Column(db.String(255), nullable=False)
   bActive = db.Column(db.Boolean)
   sPath = db.Column(db.String(255), nullable=False)
   bArchived = db.Column(db.Boolean, default=False)
@@ -86,6 +86,7 @@ class People(db.Model, UserMixin):
   bIsAdmin = db.Column(db.Boolean)
   dtAdded = db.Column(db.DateTime(), default = datetime.utcnow)
   dtUpdate = db.Column(db.DateTime(), default = datetime.utcnow, onupdate=datetime.utcnow)
+  skills = db.relationship('Skill', backref = 'skills', lazy = 'dynamic')
   __table_args__ = {'extend_existing': True}
   
   def __repr__(self):
@@ -97,6 +98,8 @@ class People(db.Model, UserMixin):
   def check_password(self, password):
     return check_password_hash(self.sPasswordHash, password)
 
+  def get_project(self):
+    return Projects.query.filter_by(sDescription=post_data.get('description'))
 
 
 
@@ -117,7 +120,7 @@ class Skill(db.Model):
 
 class SkillName(db.Model):
   id = db.Column(db.Integer, primary_key = True)
-  sDescription = db.Column(db.String(255))
+  sDescription = db.Column(db.String(255), unique=True)
   __table_args__ = {'extend_existing': True}
   
 

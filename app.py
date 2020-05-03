@@ -3,11 +3,10 @@
 
 import configparser
 import os
-from models import app, db
 from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
-from models import People
-from flask_login import login_required, LoginManager
-from flask_login import current_user, login_user
+from models import *
+from flask_login import login_required, LoginManager, current_user, login_user
+from config import PATHS
 
 
 
@@ -87,18 +86,57 @@ def static_dist(path):
     # тут пробрасываем статику  
     return send_from_directory("static/dist", path)
 
-@app.route("/api/projects/create", methods=['POST'])
+
+@app.route("/api/skills/addname/", methods=['POST'])
+def add_skill_name():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if SkillName.query.filter_by(sDescription=post_data.get('description')).first():
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Такой навык уже существует'
+            return jsonify(response_object)
+        else:
+            newSkillName = SkillName(sDescription = post_data.get('description'))
+            db.session.add(newSkillName)
+            db.session.commit()
+            response_object['message'] = 'Новый навык добавлен'
+            return jsonify(response_object)
+
+@app.route("/api/skills/addskill/", methods=['POST'])
+def add_skill():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if Skill.query.filter_by(fkPeople=post_data.get('user_id')).first():
+            if Skill.query.filter_by(fkSkillName=post_data.get('skill_id')).first():
+                response_object['status'] = 'error!'
+                response_object['message'] = 'Такой навык уже существует'
+                return jsonify(response_object)
+        else:
+            newSkill = Skill(fkPeople = post_data.get('user_id'), fkSkillName = post_data.get('skill_id'))
+            db.session.add(newSkill)
+            db.session.commit()
+            response_object['message'] = 'Новый навык добавлен'
+            return jsonify(response_object)
+
+
+@app.route("/api/projects/create/", methods=['POST'])
 def create_project():
     response_object = {'status': 'success'}
     if request.method == 'POST':
         post_data = request.get_json()
+        if Project.query.filter_by(sPlan=post_data.get('plan')).first():
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Проект с таким планом уже существует'
+            return jsonify(response_object)
         project_path = PATHS['repo'] + post_data.get('plan')
         newprj = Project(
-            plan = post_data.get('plan'),
-            title = post_data.get('description'),
-            author = post_data.get('users'),
-            path = project_path,
-            active = True
+            sPlan = post_data.get('plan'),
+            sDescription = post_data.get('description'),
+            bActive = post_data.get('active'),
+            bArchived = post_data.get('archived'),
+            sPath = project_path
         )
         db.session.add(newprj)
         db.session.commit()    
@@ -106,11 +144,13 @@ def create_project():
         if post_data.get('folders'):
             for folder in post_data.get('folders'):
                 print (folder)
-                os.system("mkdir " + project_path + "/" + folder)
-                os.system('echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + "/" + folder + "/README.TXT")
+                os.system("mkdir " + project_path + "\\" + folder)
+                text = u'echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + "\\" + folder + "\\README.TXT"
+                print(text)
+                os.system(text)
         os.system("hg init " + project_path)
-        os.system('echo "[ui]" >>  ' + project_path + "/.hg/hgrc")
-        os.system('echo "username = ' + post_data.get('users') +  '" >> ' + project_path + '/.hg/hgrc')
+        os.system('echo "[ui]" >>  ' + project_path + "\\.hg\\hgrc")
+        #os.system('echo "username = ' + current_user.sEmail +  '" >> ' + project_path + '/.hg/hgrc')
         os.system('hg commit -u "syzsi" -m "init commit" ' + project_path)
         response_object['message'] = 'Repo created!'
         return jsonify(response_object)

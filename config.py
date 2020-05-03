@@ -9,7 +9,8 @@ DATABASE_NAME = "postgres"
 DB_LOGIN = 'postgres'
 DB_PASSWORD = '123456'
 PATHS = {
-    'repo': '/var/lib/mercurial-server/repos/',
+ #   'repo': '/var/lib/mercurial-server/repos/',
+    'repo': 'E:\\storage\\prorepo\\repos\\',
 }
 
 class Config(object):
