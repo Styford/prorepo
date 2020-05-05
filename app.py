@@ -192,7 +192,7 @@ def create_project():
         if post_data['developer']:
             for dev in post_data['developer'].values():
                 for sk in dev['skill_id']:
-                    newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newprj.id)
+                    newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
                     db.session.add(newPIP)
                     if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
                         db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
@@ -202,49 +202,37 @@ def create_project():
         return jsonify(response_object)
 
 
-@app.route("/api/projects/get", methods=['GET'])
+@app.route("/api/projects/get/", methods=['GET'])
 def get_projects():
-    prjs = []
-    for p in Project.query.all():
-        prj = {}
-        prj["description"] = p.title
-        prj["plan"] = p.plan
-        prj["users"] = p.author
-        prjs.append(prj)
-    return jsonify({'prjs' : prjs})  
+    response_object = {'status': 'success'}
+    for prj in Project.query.all():
+        response_object[prj.sPlan] = prj.get_object()
+    return jsonify(response_object)  
     
-@app.route("/api/projects/update", methods=['GET'])
-def update_projects():
-    config = configparser.ConfigParser()
-    prjs = []
-    for plan in os.listdir(PATHS['repo']):
-        hgrc_file = PATHS['repo'] + plan + "/.hg/hgrc"
-        if os.access(hgrc_file, os.F_OK):
-            prj = {}
-            config.read(hgrc_file)
-        try:
-            prj["plan"] = plan
-            prj["users"] = config.get("ui","username")
-            prj["description"] = config.get("web","description")
-            prjs.append(prj)
-            print("added")
-            existPrj = Project.query.filter(Project.plan==plan).first()
-            if existPrj:
-                existPrj.author = config.get("ui","username")
-                existPrj.title = config.get("web","description")
-                existPrj.path = config.get("paths","default")
-            else:
-                newprj = Project(
-                    plan = plan,
-                    title = config.get("web","description"),
-                    author = config.get("ui","username"),
-                    active = True,
-                    path = IPADDRESS + plan)
-            db.session.add(newprj)
+
+@app.route("/api/projects/update/", methods=['POST'])
+def update_project():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if post_data.get('plan'):
+            prj = Project.query.filter_by(sPlan = post_data.get('plan')).first()
+            if post_data.get('description'): prj.sDescription = post_data.get('description')
+            if post_data.get('active'): prj.bActive = post_data.get('active')
+            if post_data.get('archived'): prj.bArchived = post_data.get('archived')
+            for p in prj.PIP:
+                db.session.delete(p)
+            if post_data['developer']:
+                for dev in post_data['developer'].values():
+                    for sk in dev['skill_id']:
+                        newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = prj.id)
+                        db.session.add(newPIP)
+                        if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
+                            db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
+                        db.session.flush()
             db.session.commit()
-        except:
-            print("Ошибка чтения конфигурации")       
-    return jsonify({'prjs' : prjs})
+            return jsonify(response_object)
+            
 
 @app.route("/api/projects/delete", methods=['GET'])
 def delete_project():

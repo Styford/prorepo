@@ -37,10 +37,40 @@ class Project(db.Model):
     bArchived = db.Column(db.Boolean, default=False)
     dtAdded = db.Column(db.DateTime(), default = datetime.utcnow)
     dtUpdate = db.Column(db.DateTime(), default = datetime.utcnow, onupdate=datetime.utcnow)
+    PIP = db.relationship('PeopleInProject', backref = 'project', lazy = 'dynamic')
     __table_args__ = {'extend_existing': True}
+    
     def __repr__(self):
-        return ("<Project %s>" % self.sTitle)
+        return ("<Project %s>" % self.sDescription)
 
+    def get_developers(self):
+        dict_developers = {}
+        for developer in self.PIP:
+            key = developer.fkPeople
+            dict_developers[key] = People.query.get(key).sFirstName + " " + People.query.get(key).sLastName
+        return dict_developers
+    
+    def get_skills(self):
+        dict_skills = {}
+        for skill in self.PIP:
+            key = skill.fkSkillName
+            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.get(key).sDescription
+        return dict_skills
+    
+    def get_object(self):
+        return ({
+            "id" : self.id,
+            "plan" : self.sPlan,
+            "description" : self.sDescription,
+            "active" : self.bActive,
+            "path" : self.sPath,
+            "archived" : self.bArchived,
+            "added" : self.dtAdded,
+            "update" : self.dtUpdate,
+            "developers" : self.get_developers(),
+            "skills" : self.get_skills()
+        })
+        
 
 
 class Certs(db.Model):
