@@ -12,7 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 from flask_login import LoginManager, UserMixin
 
-app = Flask(__name__, static_folder='static/dist')
+app = Flask(__name__, static_folder='static')
 app.config.from_object(DevelopmentConfig)
 #app.secret_key = 'some secret key'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -47,7 +47,10 @@ class Project(db.Model):
         dict_developers = {}
         for developer in self.PIP:
             key = developer.fkPeople
-            dict_developers[key] = People.query.get(key).sFirstName + " " + People.query.get(key).sLastName
+            if People.query.get(key).sFirstName and People.query.get(key).sLastName:
+                dict_developers[key] = People.query.get(key).sFirstName + " " + People.query.get(key).sLastName
+            else:
+                dict_developers[key] = People.query.get(key).sEmail
         return dict_developers
     
     def get_skills(self):
@@ -79,6 +82,7 @@ class Certs(db.Model):
     fkCertsDesc = db.Column(db.Integer, db.ForeignKey("certs_desc.id"))
     dtAdded = db.Column(db.DateTime(), default = datetime.utcnow)
     dtExpired = db.Column(db.DateTime(), default = datetime.utcnow)
+    iProcessed = db.Column(db.Integer)              # 0 - Необработан, 1 - Утверждён, 9 - Вышел срок
     sNrProtocol = db.Column(db.String(50))
     sNrCert = db.Column(db.String(50))
     __table_args__ = {'extend_existing': True}
@@ -118,6 +122,7 @@ class People(db.Model, UserMixin):
     dtUpdate = db.Column(db.DateTime(), default = datetime.utcnow, onupdate=datetime.utcnow)
     skills = db.relationship('Skill', backref = 'people', lazy = 'dynamic') # навыки
     inProjects = db.relationship('PeopleInProject', backref = 'people', lazy = 'dynamic') # участие в проектах
+    certs = db.relationship('Certs', backref = 'people', lazy = 'dynamic') # наличие удостоверений
     __table_args__ = {'extend_existing': True}
   
     def __repr__(self):
@@ -141,7 +146,13 @@ class People(db.Model, UserMixin):
         for project in self.inProjects:
             dict_projects[project.fkProject] = Project.query.get(project.fkProject).sPlan
         return dict_projects
-
+    
+    def get_certs(self):
+        dict_certs = {}
+        for cert in self.certs:
+            key = cert.fkCertsDesc
+            dict_certs[key] = CertsDesc.query.get(key).sDescription
+        return dict_certs
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key = True)

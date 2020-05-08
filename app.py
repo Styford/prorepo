@@ -79,12 +79,13 @@ def update_myself():
 @app.route('/')
 def index():
     # тут просто пробрасываем файлик, без всякого препроцессинга
+    print("we are there")
     return app.send_static_file("index.html")
 
 @app.route('/dist/<path:path>')
 def static_dist(path):
     # тут пробрасываем статику  
-    return send_from_directory("static/dist", path)
+    return send_from_directory("../../proclient/dist", path)
 
 
 @app.route("/api/skills/addname/", methods=['POST'])
@@ -119,6 +120,39 @@ def add_skill():
         return jsonify(response_object)
 
 
+@app.route("/api/certs/addname/", methods=['POST'])
+def add_certs_name():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if CertsDesc.query.filter_by(sDescription=post_data.get('description')).first():
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Такое удостоверение уже существует'
+            return jsonify(response_object)
+        else:
+            newCertsDesc = CertsDesc(sDescription = post_data.get('description'))
+            db.session.add(newCertsDesc)
+            db.session.commit()
+            response_object['message'] = 'Новое удостоверение добавлено'
+            return jsonify(response_object)
+        
+
+@app.route("/api/certs/addcert/", methods=['POST'])
+def add_cert():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if Certs.query.filter_by(fkPeople=post_data.get('user_id'), fkCertsDesc=post_data.get('description_id'), iProcessed=1).first():
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Такое удостоверение уже существует'
+            return jsonify(response_object)
+        newCert = Certs(fkPeople = post_data.get('user_id'), fkCertsDesc = post_data.get('description_id'), iProcessed=1)
+        db.session.add(newCert)
+        db.session.commit()
+        response_object['message'] = 'Новое удостоверение добавлено'
+        return jsonify(response_object)
+
+        
 @app.route("/api/projects/pip/", methods=['POST'])
 def people_in_project():
     response_object = {'status': 'success'}
@@ -181,13 +215,20 @@ def create_project():
         if post_data.get('folders'):
             for folder in post_data.get('folders'):
                 print (folder)
-                os.system("mkdir " + project_path + "\\" + folder)
-                text = u'echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + "\\" + folder + "\\README.TXT"
+                os.system("mkdir " + project_path + FD + folder)
+                text = u'echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + FD + folder + FD + "README.TXT"
                 print(text)
                 os.system(text)
         os.system("hg init " + project_path)
-        os.system('echo "[ui]" >>  ' + project_path + "\\.hg\\hgrc")
-        #os.system('echo "username = ' + current_user.sEmail +  '" >> ' + project_path + '/.hg/hgrc')
+        os.system('echo "[trusted]" >>  ' + project_path + FD + ".hg" + FD + "hgrc")
+        os.system('echo "users = root" >>  ' + project_path + FD + ".hg" + FD + "hgrc")
+        os.system('echo "[ui]" >>  ' + project_path + FD + ".hg" + FD + "hgrc")        
+        os.system('echo "username = ' + current_user.sEmail +  '" >> ' + project_path + '/.hg/hgrc')
+        os.system('echo "[web]" >>  ' + project_path + FD + ".hg" + FD + "hgrc")
+        os.system('echo "description = ' + post_data.get('description') +  '" >> ' + project_path + FD +'.hg' + FD + 'hgrc')
+        os.system('echo "push_ssl = false" >> ' + project_path + '/.hg/hgrc')
+        os.system('echo "allow_push = *" >> ' + project_path + '/.hg/hgrc')
+        os.system('hg add ' + project_path)
         os.system('hg commit -u "syzsi" -m "init commit" ' + project_path)
         if post_data['developer']:
             for dev in post_data['developer'].values():
