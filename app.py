@@ -16,7 +16,7 @@ from config import PATHS
 def admin():
     return render_template('admin.html')
 
-@app.route('/login/', methods=['GET', 'POST'])
+@app.route('/user/login', methods=['GET', 'POST'])
 def login():
     
     response_object = {'status': 'success'}
@@ -33,7 +33,7 @@ def login():
         login_user(user, remember = True)
         return jsonify(response_object)
 
-@app.route('/registration/', methods=['POST'])
+@app.route('/user/registration', methods=['POST'])
 def registration():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -51,7 +51,7 @@ def registration():
             response_object['message'] = 'Пользователь с таким адресом уже существуюет'
             return jsonify(response_object)
 
-@app.route('/update_myself/', methods=['POST'])
+@app.route('/user/update_myself', methods=['POST'])
 @login_required
 def update_myself():
     response_object = {'status': 'success'}
@@ -87,7 +87,7 @@ def static_dist(path):
     return send_from_directory("static/dist", path)
 
 
-@app.route("/api/skills/addname/", methods=['POST'])
+@app.route("/api/skills/addname", methods=['POST'])
 def add_skill_name():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -103,7 +103,7 @@ def add_skill_name():
             response_object['message'] = 'Новый навык добавлен'
             return jsonify(response_object)
 
-@app.route("/api/skills/addskill/", methods=['POST'])
+@app.route("/api/skills/addskill", methods=['POST'])
 def add_skill():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -119,7 +119,7 @@ def add_skill():
         return jsonify(response_object)
 
 
-@app.route("/api/projects/pip/", methods=['POST'])
+@app.route("/api/projects/pip", methods=['POST'])
 def people_in_project():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -160,7 +160,7 @@ def people_in_project():
 #}
 #}
 
-@app.route("/api/projects/create/", methods=['POST'])
+@app.route("/api/projects/create", methods=['POST'])
 def create_project():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -202,7 +202,7 @@ def create_project():
         return jsonify(response_object)
 
 
-@app.route("/api/projects/get/", methods=['GET'])
+@app.route("/api/projects/get", methods=['GET'])
 def get_projects():
     response_object = {'status': 'success'}
     for prj in Project.query.all():
@@ -210,7 +210,7 @@ def get_projects():
     return jsonify(response_object)  
     
 
-@app.route("/api/projects/update/", methods=['POST'])
+@app.route("/api/projects/update", methods=['POST'])
 def update_project():
     response_object = {'status': 'success'}
     if request.method == 'POST':
