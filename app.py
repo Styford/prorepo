@@ -31,6 +31,7 @@ def login():
             response_object['message'] = 'User not found or invalid password!'
             return jsonify(response_object)
         login_user(user, remember = True)
+        response_object['current_user'] = user.sEmail;
         return jsonify(response_object)
 
 @app.route('/user/registration', methods=['POST'])
@@ -45,6 +46,8 @@ def registration():
             db.session.add(user)
             db.session.commit()
             response_object['message'] = 'Регистрация прошла успешно'
+            login_user(user, remember = True)
+            response_object['current_user'] = user.sEmail;
             return jsonify(response_object)
         else:
             response_object['status'] = 'error!'
