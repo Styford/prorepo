@@ -133,7 +133,7 @@ class People(db.Model, UserMixin):
     
     def check_password(self, password):
         return check_password_hash(self.sPasswordHash, password)
-
+    
     def get_skills(self):
         dict_skills = {}
         for skill in self.skills:

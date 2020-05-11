@@ -1,14 +1,28 @@
 # -*- coding:utf-8 -*-
 
 
-import configparser
+#import configparsers
 import os
 from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
 from models import *
 from flask_login import login_required, LoginManager, current_user, login_user
 from config import PATHS
+from flask_jwt import JWT, jwt_required, current_identity
+from datetime import datetime
 
 
+def auth(email, password):
+    user = People.query.filter_by(sEmail = email).first()
+    if user:
+        if user.check_password(password):
+            return user
+
+def identity(payload):
+    email = payload['identity']
+    return People.query.filter_by(sEmail = email).first()
+        
+        
+jwt = JWT(app, auth, identity)
 
 
 @app.route('/admin/')
@@ -16,22 +30,40 @@ from config import PATHS
 def admin():
     return render_template('admin.html')
 
-@app.route('/user/login', methods=['GET', 'POST'])
-def login():
+
+@app.route('/user/getcurrentuser', methods=['GET'])
+def get_current_user():
+    response_object = {'status': 'success'}
+    print (current_user)
+    if current_user.is_authenticated:
+        response_object['current_user'] = current_user.sEmail;
+    else:
+        response_object['current_user'] = "Anonymous";
+    return jsonify(response_object)
     
+       
+@app.route('/user/login', methods=['GET', 'POST'])
+def login():    
     response_object = {'status': 'success'}
     if current_user.is_authenticated:
         response_object['message'] = 'Allready authorized'
         return jsonify(response_object)
     if request.method == 'POST':
         post_data = request.get_json()
-        user = People.query.filter_by(sEmail=post_data.get('email')).first()
-        if user is None or not user.check_password(post_data.get('password')):
+        user = auth(post_data.get('email'), post_data.get('password'))
+        if user is None:
             response_object['status'] = 'error!'
             response_object['message'] = 'User not found or invalid password!'
             return jsonify(response_object)
         login_user(user, remember = True)
         response_object['current_user'] = user.sEmail;
+        token = JWT.encode({
+            'sub': user.sEmail,
+            'iat': datetime.utcnow(),
+            'exp': datetime.utcnow() + timedelta(days = 30)},
+            app.config['SECRET_KEY'])
+        print (token)
+        response_object['token'] = token;
         return jsonify(response_object)
 
 @app.route('/user/registration', methods=['POST'])
@@ -247,6 +279,7 @@ def create_project():
 
 
 @app.route("/api/projects/get", methods=['GET'])
+@login_required
 def get_projects():
     response_object = {'status': 'success'}
     for prj in Project.query.all():
@@ -289,7 +322,9 @@ def delete_project():
             db.session.commit()
         response_object['message'] = 'Repo deleted!'
         return jsonify(response_object)
-  
+
+
+        
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
 
