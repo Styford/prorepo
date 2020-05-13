@@ -57,7 +57,7 @@ class Project(db.Model):
         dict_skills = {}
         for skill in self.PIP:
             key = skill.fkSkillName
-            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.get(key).sDescription
+            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.  get(key).sDescription
         return dict_skills
     
     def get_object(self):
