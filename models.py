@@ -172,6 +172,7 @@ class Skill(db.Model):
 class SkillName(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     sDescription = db.Column(db.String(255), nullable=False)
+    sBaseSoftware = db.Column(db.String(255))
     sArea = db.Column(db.String(255), nullable=False)
     __table_args__ = {'extend_existing': True}
   

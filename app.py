@@ -7,7 +7,7 @@ from flask import Flask, jsonify, send_from_directory, request, redirect, url_fo
 from models import *
 from flask_login import login_required, LoginManager, current_user, login_user
 from config import PATHS
-from flask_jwt import JWT, jwt_required, current_identity
+#from flask_jwt import JWT, jwt_required, current_identity
 from datetime import datetime
 
 
@@ -22,7 +22,7 @@ def identity(payload):
     return People.query.filter_by(sEmail = email).first()
         
         
-jwt = JWT(app, auth, identity)
+#jwt = JWT(app, auth, identity)
 
 
 @app.route('/admin/')
@@ -57,13 +57,6 @@ def login():
             return jsonify(response_object)
         login_user(user, remember = True)
         response_object['current_user'] = user.sEmail;
-        token = JWT.encode({
-            'sub': user.sEmail,
-            'iat': datetime.utcnow(),
-            'exp': datetime.utcnow() + timedelta(days = 30)},
-            app.config['SECRET_KEY'])
-        print (token)
-        response_object['token'] = token;
         return jsonify(response_object)
 
 @app.route('/user/registration', methods=['POST'])
@@ -128,12 +121,16 @@ def add_skill_name():
     response_object = {'status': 'success'}
     if request.method == 'POST':
         post_data = request.get_json()
-        if SkillName.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('area')).first():
+        if SkillName.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('baseSoftware')).first():
             response_object['status'] = 'error!'
             response_object['message'] = 'Такой навык уже существует'
             return jsonify(response_object)
         else:
-            newSkillName = SkillName(sDescription = post_data.get('description'), sArea = post_data.get('area'))
+            newSkillName = SkillName(
+                sDescription = post_data.get('description'), 
+                sArea = post_data.get('area'),
+                sBaseSoftware = post_data.get('baseSoftware')
+                )
             db.session.add(newSkillName)
             db.session.commit()
             response_object['message'] = 'Новый навык добавлен'
