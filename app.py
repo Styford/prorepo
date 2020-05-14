@@ -7,9 +7,10 @@ from flask import Flask, jsonify, send_from_directory, request, redirect, url_fo
 from models import *
 from flask_login import login_required, LoginManager, current_user, login_user
 from config import PATHS
-from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from datetime import datetime
 
+jwt = JWTManager(app)
 
 def auth(email, password):
     user = People.query.filter_by(sEmail = email).first()
@@ -22,7 +23,7 @@ def identity(payload):
     return People.query.filter_by(sEmail = email).first()
         
         
-jwt = JWT(app, auth, identity)
+
 
 
 @app.route('/admin/')
@@ -56,14 +57,8 @@ def login():
             response_object['message'] = 'User not found or invalid password!'
             return jsonify(response_object)
         login_user(user, remember = True)
+        access_token = create_access_token(identity = user.sEmail)
         response_object['current_user'] = user.sEmail;
-        token = JWT.encode({
-            'sub': user.sEmail,
-            'iat': datetime.utcnow(),
-            'exp': datetime.utcnow() + timedelta(days = 30)},
-            app.config['SECRET_KEY'])
-        print (token)
-        response_object['token'] = token;
         return jsonify(response_object)
 
 @app.route('/user/registration', methods=['POST'])
