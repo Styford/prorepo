@@ -57,7 +57,7 @@ class Project(db.Model):
         dict_skills = {}
         for skill in self.PIP:
             key = skill.fkSkillName
-            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.get(key).sDescription
+            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.  get(key).sDescription
         return dict_skills
     
     def get_object(self):
@@ -172,6 +172,7 @@ class Skill(db.Model):
 class SkillName(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     sDescription = db.Column(db.String(255), nullable=False)
+    sBaseSoftware = db.Column(db.String(255))
     sArea = db.Column(db.String(255), nullable=False)
     __table_args__ = {'extend_existing': True}
   

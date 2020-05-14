@@ -123,12 +123,16 @@ def add_skill_name():
     response_object = {'status': 'success'}
     if request.method == 'POST':
         post_data = request.get_json()
-        if SkillName.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('area')).first():
+        if SkillName.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('baseSoftware')).first():
             response_object['status'] = 'error!'
             response_object['message'] = 'Такой навык уже существует'
             return jsonify(response_object)
         else:
-            newSkillName = SkillName(sDescription = post_data.get('description'), sArea = post_data.get('area'))
+            newSkillName = SkillName(
+                sDescription = post_data.get('description'), 
+                sArea = post_data.get('area'),
+                sBaseSoftware = post_data.get('baseSoftware')
+                )
             db.session.add(newSkillName)
             db.session.commit()
             response_object['message'] = 'Новый навык добавлен'
