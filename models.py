@@ -57,7 +57,7 @@ class Project(db.Model):
         dict_skills = {}
         for skill in self.PIP:
             key = skill.fkSkillName
-            dict_skills[key] = SkillName.query.get(key).sArea + " " + SkillName.query.  get(key).sDescription
+            dict_skills[key] = SkillName.query.get(key).sBaseSoftware + " " + SkillName.query.get(key).sDescription
         return dict_skills
     
     def get_object(self):
@@ -153,6 +153,18 @@ class People(db.Model, UserMixin):
             key = cert.fkCertsDesc
             dict_certs[key] = CertsDesc.query.get(key).sDescription
         return dict_certs
+    
+    def get_object(self):
+        return({
+            "id"            : self.id,
+            "iRole"         : self.iRole,
+            "sPostion"      : self.sPostion,
+            "sFirstName"    : self.sFirstName,
+            "sMiddleName"   : self.sMiddleName,
+            "sLastName"     : self.sLastName,
+            "sEmail"        : self.sEmail            
+        })
+
 
 class Group(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -166,7 +178,13 @@ class Skill(db.Model):
     fkPeople = db.Column(db.Integer, db.ForeignKey("people.id"))
     fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_name.id"))
     __table_args__ = {'extend_existing': True}
-  
+    
+    def get_object(self):
+        return({
+            "id"        : self.id,
+            "fkPeople"  : self.fkPeople,
+            "fkSkillName" : self.fkSkillName
+        })
 
 
 class SkillName(db.Model):
@@ -175,7 +193,7 @@ class SkillName(db.Model):
     sBaseSoftware = db.Column(db.String(255))
     sArea = db.Column(db.String(255), nullable=False)
     __table_args__ = {'extend_existing': True}
-  
+    
 
 
 class PeopleInProject(db.Model):
