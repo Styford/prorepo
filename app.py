@@ -212,7 +212,7 @@ def people_in_project():
 # {
 # "plan": "DDD.DD",
 # "description": "Описание проекта",
-# "developer": {
+# "developers": {
     # "VU" : {	
        # "skill_id" : [8,9,10,11],
        # "developer_id" : 1
@@ -253,10 +253,10 @@ def create_project():
         os.system("mkdir " + project_path)
         folders = ["SUPPORT", "IO"]
         
-        if post_data['developer']:
-            if "VU" in post_data['developer']: folders.append("VU")
-            if "SU" in post_data['developer']: folders.append("SU")
-            for dev in post_data['developer'].values():
+        if post_data['developers']:
+            if "VU" in post_data['developers']: folders.append("VU")
+            if "SU" in post_data['developers']: folders.append("SU")
+            for dev in post_data['developers'].values():
                 for sk in dev['skill_id']:
                     newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
                     db.session.add(newPIP)

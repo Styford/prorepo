@@ -45,12 +45,12 @@ class Project(db.Model):
 
     def get_developers(self):
         dict_developers = {}
-        for developer in self.PIP:
-            key = developer.fkPeople
-            if People.query.get(key).sFirstName and People.query.get(key).sLastName:
-                dict_developers[key] = People.query.get(key).sFirstName + " " + People.query.get(key).sLastName
-            else:
-                dict_developers[key] = People.query.get(key).sEmail
+        for pip in self.PIP:
+            area = SkillName.query.get( pip.fkSkillName ).sArea                         # area : VU, SU, KD, ED
+            if area  not in dict_developers : dict_developers[area] = {"developer_id": [], "skill_id": []}
+            if pip.fkPeople not in dict_developers[area]["developer_id"] : dict_developers[area]["developer_id"].append( pip.fkPeople )
+            dict_developers[area]["skill_id"].append( pip.fkSkillName )
+        
         return dict_developers
     
     def get_skills(self):
