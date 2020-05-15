@@ -46,9 +46,6 @@ def get_current_user():
 @app.route('/user/login', methods=['GET', 'POST'])
 def login():    
     response_object = {'status': 'success'}
-    if current_user.is_authenticated and 0:
-        response_object['message'] = 'Allready authorized'
-        return jsonify(response_object)
     if request.method == 'POST':
         post_data = request.get_json()
         user = auth(post_data.get('email'), post_data.get('password'))
@@ -212,21 +209,29 @@ def people_in_project():
 
 
 ########## Спека на вход функции create_project
-#{
-#"plan": "DDD.DD",
-#"description": "Описание проекта",
-#"folders": ["VU", "SU", "SUPPORT", "IO"],
-#"developer": {
-#    "1" : {	
-#        "skill_id" : [8,9,10,11],
-#        "developer_id" : 1
-#  	},
-#    "2" : {
-#        "skill_id" : [12,13],
-#        "developer_id" : 2
-#	}
-#}
-#}
+# {
+# "plan": "DDD.DD",
+# "description": "Описание проекта",
+# "developer": {
+    # "VU" : {	
+       # "skill_id" : [8,9,10,11],
+       # "developer_id" : 1
+ 	# },
+    # "SU" : {
+       # "skill_id" : [12,13],
+       # "developer_id" : 2
+	# },
+    # "KD" : {	
+       # "skill_id" : [3],
+       # "developer_id" : 3
+ 	# },
+    # "ED" : {	
+       # "skill_id" : [3],
+       # "developer_id" : 4
+ 	# }
+# }
+# }
+
 
 @app.route("/api/projects/create", methods=['POST'])
 def create_project():
@@ -246,13 +251,24 @@ def create_project():
         db.session.add(newPrj)
         db.session.flush()
         os.system("mkdir " + project_path)
-        if post_data.get('folders'):
-            for folder in post_data.get('folders'):
-                print (folder)
-                os.system("mkdir " + project_path + FD + folder)
-                text = u'echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + FD + folder + FD + "README.TXT"
-                print(text)
-                os.system(text)
+        folders = ["SUPPORT", "IO"]
+        
+        if post_data['developer']:
+            if "VU" in post_data['developer']: folders.append("VU")
+            if "SU" in post_data['developer']: folders.append("SU")
+            for dev in post_data['developer'].values():
+                for sk in dev['skill_id']:
+                    newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
+                    db.session.add(newPIP)
+                    if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
+                        db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
+                    db.session.flush()
+                    
+        for folder in folders:
+            os.system("mkdir " + project_path + FD + folder)
+            text = u'echo "Файл для пояснений работы/разворачивания ПО" >> ' + project_path + FD + folder + FD + "README.TXT"
+            os.system(text)
+        
         os.system("hg init " + project_path)
         os.system('echo "[trusted]" >>  ' + project_path + FD + ".hg" + FD + "hgrc")
         os.system('echo "users = root" >>  ' + project_path + FD + ".hg" + FD + "hgrc")
@@ -264,14 +280,7 @@ def create_project():
         os.system('echo "allow_push = *" >> ' + project_path + '/.hg/hgrc')
         os.system('hg add ' + project_path)
         os.system('hg commit -u "syzsi" -m "init commit" ' + project_path)
-        if post_data['developer']:
-            for dev in post_data['developer'].values():
-                for sk in dev['skill_id']:
-                    newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
-                    db.session.add(newPIP)
-                    if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
-                        db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
-                    db.session.flush()
+        
         db.session.commit()
         response_object['message'] = 'Repo created!'
         return jsonify(response_object)
