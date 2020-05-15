@@ -46,7 +46,7 @@ def get_current_user():
 @app.route('/user/login', methods=['GET', 'POST'])
 def login():    
     response_object = {'status': 'success'}
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and 0:
         response_object['message'] = 'Allready authorized'
         return jsonify(response_object)
     if request.method == 'POST':
