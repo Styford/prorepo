@@ -7,11 +7,11 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 IPADDRESS = "http://10.99.0.103/"
 DATABASE_NAME = "postgres"
 DB_LOGIN = 'postgres'
-FD = "\\"                # Разделитель в пути папки
+FD = "/"                # Разделитель в пути папки
 DB_PASSWORD = '123456'
 PATHS = {
- #   'repo': '/var/lib/mercurial-server/repos/',
-    'repo': 'E:\\storage\\prorepo\\repos\\',
+    'repo': '/var/lib/mercurial-server/repos/',
+ #   'repo': 'E:\\storage\\prorepo\\repos\\',
 }
 
 class Config(object):

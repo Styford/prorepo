@@ -83,7 +83,6 @@ class Certs(db.Model):
     dtAdded = db.Column(db.DateTime(), default = datetime.utcnow)
     dtExpired = db.Column(db.DateTime(), default = datetime.utcnow)
     iProcessed = db.Column(db.Integer)              # 0 - Необработан, 1 - Утверждён, 9 - Вышел срок
-    sNrProtocol = db.Column(db.String(50))
     sNrCert = db.Column(db.String(50))
     __table_args__ = {'extend_existing': True}
 
@@ -91,7 +90,7 @@ class Certs(db.Model):
 
 class CertsDesc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sDescription = db.Column(db.String(255))
+    sDescription = db.Column(db.String(255), unique=True)
     __table_args__ = {'extend_existing': True}
   
 
@@ -175,8 +174,9 @@ class Group(db.Model):
 
 class Skill(db.Model):
     id = db.Column(db.Integer, primary_key = True)
+    iRate = db.Column(db.Integer)
     fkPeople = db.Column(db.Integer, db.ForeignKey("people.id"))
-    fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_name.id"))
+    fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_desc.id"))
     __table_args__ = {'extend_existing': True}
     
     def get_object(self):
@@ -187,7 +187,7 @@ class Skill(db.Model):
         })
 
 
-class SkillName(db.Model):
+class SkillDesc(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     sDescription = db.Column(db.String(255), nullable=False)
     sBaseSoftware = db.Column(db.String(255))
@@ -197,7 +197,7 @@ class SkillName(db.Model):
 
 
 class PeopleInProject(db.Model):
-    fkSkillName = db.Column(db.Integer, db.ForeignKey("skill_name.id"), primary_key = True)
+    fkSkillDesc = db.Column(db.Integer, db.ForeignKey("skill_desc.id"), primary_key = True)
     fkPeople = db.Column(db.Integer, db.ForeignKey("people.id"), primary_key = True)
     fkProject = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key = True)
     __table_args__ = {'extend_existing': True}

@@ -78,6 +78,22 @@ def registration():
             response_object['message'] = 'Пользователь с таким адресом уже существуюет'
             return jsonify(response_object)
 
+
+@app.route('/user/addgroup', methods=['POST'])
+def add_user_group():
+    response_object = {'status': 'success'}
+    if request.method == 'POST':
+        post_data = request.get_json()
+        if Group.query.filter_by(sGroupName = post_data.get('groupname')).first():
+            response_object['status'] = 'error!'
+            response_object['message'] = 'Данная группа уже существует'
+            return jsonify(response_object)
+        group = Group(sGroupName = post_data.get('groupname'))
+        db.session.add(group)
+        db.session.commit()
+        response_object['message'] = "Группа успешно добавлена"
+        return jsonify(response_object)
+            
 @app.route('/user/update_myself', methods=['POST'])
 @login_required
 def update_myself():
@@ -151,7 +167,7 @@ def add_skill():
         return jsonify(response_object)
 
 
-@app.route("/api/certs/addname/", methods=['POST'])
+@app.route("/api/certs/addname", methods=['POST'])
 def add_certs_name():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -168,7 +184,7 @@ def add_certs_name():
             return jsonify(response_object)
         
 
-@app.route("/api/certs/addcert/", methods=['POST'])
+@app.route("/api/certs/addcert", methods=['POST'])
 def add_cert():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -184,7 +200,7 @@ def add_cert():
         return jsonify(response_object)
 
         
-@app.route("/api/projects/pip/", methods=['POST'])
+@app.route("/api/projects/pip", methods=['POST'])
 def people_in_project():
     response_object = {'status': 'success'}
     if request.method == 'POST':
@@ -258,10 +274,10 @@ def create_project():
             if "SU" in post_data['developers']: folders.append("SU")
             for dev in post_data['developers'].values():
                 for sk in dev['skill_id']:
-                    newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
+                    newPIP = PeopleInProject(fkSkillDesc = sk, fkPeople = dev['developer_id'], fkProject = newPrj.id)
                     db.session.add(newPIP)
-                    if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
-                        db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
+                    if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillDesc = sk).first():
+                        db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillDesc = sk))
                     db.session.flush()
                     
         for folder in folders:
@@ -310,10 +326,10 @@ def update_project():
             if post_data['developer']:
                 for dev in post_data['developer'].values():
                     for sk in dev['skill_id']:
-                        newPIP = PeopleInProject(fkSkillName = sk, fkPeople = dev['developer_id'], fkProject = prj.id)
+                        newPIP = PeopleInProject(fkSkillDesc = sk, fkPeople = dev['developer_id'], fkProject = prj.id)
                         db.session.add(newPIP)
-                        if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillName = sk).first():
-                            db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillName = sk))
+                        if not Skill.query.filter_by(fkPeople = dev['developer_id'], fkSkillDesc = sk).first():
+                            db.session.add(Skill(fkPeople = dev['developer_id'], fkSkillDesc = sk))
                         db.session.flush()
             db.session.commit()
             return jsonify(response_object)
