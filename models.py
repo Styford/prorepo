@@ -194,6 +194,13 @@ class SkillDesc(db.Model):
     sArea = db.Column(db.String(255), nullable=False)
     __table_args__ = {'extend_existing': True}
     
+    def get_object(self):
+        return({
+            "id"            : self.id,
+            "sBaseSoftware" : self.sBaseSoftware,
+            "sDescription"  : self.sDescription,
+            "sArea"         : self.sArea
+        })
 
 
 class PeopleInProject(db.Model):

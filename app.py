@@ -37,9 +37,9 @@ def get_current_user():
     response_object = {'status': 'success'}
     print (current_user)
     if current_user.is_authenticated:
-        response_object['current_user'] = current_user.sEmail;
+        response_object['current_user'] = current_user.get_object();
     else:
-        response_object['current_user'] = "Anonymous";
+        response_object['current_user'] = {"sEmail" : "Anonymous"};
     return jsonify(response_object)
     
        
@@ -132,16 +132,16 @@ def static_dist(path):
 
 
 @app.route("/api/skills/addname", methods=['POST'])
-def add_skill_name():
+def add_skill_desc():
     response_object = {'status': 'success'}
     if request.method == 'POST':
         post_data = request.get_json()
-        if SkillName.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('baseSoftware')).first():
+        if SkillDesc.query.filter_by(sDescription=post_data.get('description'), sArea=post_data.get('baseSoftware')).first():
             response_object['status'] = 'error!'
             response_object['message'] = 'Такой навык уже существует'
             return jsonify(response_object)
         else:
-            newSkillName = SkillName(
+            newSkillName = SkillDesc(
                 sDescription = post_data.get('description'), 
                 sArea = post_data.get('area'),
                 sBaseSoftware = post_data.get('baseSoftware')
@@ -165,6 +165,33 @@ def add_skill():
         db.session.commit()
         response_object['message'] = 'Новый навык добавлен'
         return jsonify(response_object)
+
+
+@app.route("/api/skills/getalldesc", methods=['GET'])
+def get_all_skills_desc():    
+    if request.method == 'GET':
+        response_object = {'status': 'success', 'skills' : []}
+        for skill in SkillDesc.query.all():
+            response_object['skills'].append(skill.sBaseSoftware + " " + skill.sDescription)
+    return jsonify(response_object)
+
+
+@app.route("/api/user/getallgroups", methods=['GET'])
+def get_all_group():    
+    if request.method == 'GET':
+        response_object = {'status': 'success', 'groups' : []}
+        for group in Group.query.all():
+            response_object['groups'].append(group.sGroupName)
+    return jsonify(response_object)
+
+
+@app.route("/api/user/getallcerts", methods=['GET'])
+def get_all_certs():    
+    if request.method == 'GET':
+        response_object = {'status': 'success', 'certs' : []}
+        for cert in CertsDesc.query.all():
+            response_object['certs'].append(cert.sDescription)
+    return jsonify(response_object)
 
 
 @app.route("/api/certs/addname", methods=['POST'])
@@ -303,7 +330,6 @@ def create_project():
 
 
 @app.route("/api/projects/get", methods=['GET'])
-@login_required
 def get_projects():
     response_object = {'status': 'success'}
     for prj in Project.query.all():
