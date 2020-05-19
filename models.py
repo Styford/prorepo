@@ -109,7 +109,7 @@ class Files(db.Model):
     
 class People(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key = True)
-    iRole = db.Column(db.Integer)                   # 1 - Admin, 2 - User, 3 - Guest
+    iRole = db.Column(db.Integer, default = 1)      # 999 - Admin, 2 - User, 1 - Guest
     sPostion = db.Column(db.String(255))            # TODO: Перевести в справочник должностей
     sFirstName = db.Column(db.String(255))          # Имя
     sMiddleName = db.Column(db.String(255))         # Отчество 

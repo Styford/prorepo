@@ -58,6 +58,7 @@ def login():
         response_object['current_user'] = user.sEmail;
         return jsonify(response_object)
 
+
 @app.route('/user/registration', methods=['POST'])
 def registration():
     response_object = {'status': 'success'}
@@ -93,7 +94,25 @@ def add_user_group():
         db.session.commit()
         response_object['message'] = "Группа успешно добавлена"
         return jsonify(response_object)
-            
+        
+
+@app.route('/api/user/get/<user_id>', methods=['GET'])
+def get_users(user_id):
+    response_object = {'status': 'success'}
+    if request.method == 'GET':
+        if str(user_id).lower() == 'all':
+            response_object['users'] = []
+            for user in People.query:
+                response_object['users'].append({user.sEmail : user.get_object()})
+            return jsonify(response_object)
+        user = People.query.get(user_id)
+        if user:
+            response_object['user'] = user.get_object()
+        else:
+            response_object['user'] = {'sEmail' : "Anonymous"}
+        return jsonify(response_object)
+
+
 @app.route('/user/update_myself', methods=['POST'])
 @login_required
 def update_myself():
@@ -150,6 +169,7 @@ def add_skill_desc():
             db.session.commit()
             response_object['message'] = 'Новый навык добавлен'
             return jsonify(response_object)
+
 
 @app.route("/api/skills/addskill", methods=['POST'])
 def add_skill():
