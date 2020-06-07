@@ -116,7 +116,9 @@ class People(db.Model, UserMixin):
     sLastName = db.Column(db.String(255))           # Фамилия
     sEmail = db.Column(db.String(255))              # Почта
     sPasswordHash = db.Column(db.String(255))       # Хеш пароля
+    iCategory = db.Column(db.Integer, default = 4)
     fkGroup = db.Column(db.Integer, db.ForeignKey("group.id"))  # Группа, отдел, сектор
+    dtBirthday = db.Column(db.DateTime(), default = datetime.utcnow)
     dtAdded = db.Column(db.DateTime(), default = datetime.utcnow) 
     dtUpdate = db.Column(db.DateTime(), default = datetime.utcnow, onupdate=datetime.utcnow)
     skills = db.relationship('Skill', backref = 'people', lazy = 'dynamic') # навыки
